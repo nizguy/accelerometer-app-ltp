@@ -1,1 +1,114 @@
+<!DOCTYPE html>
 
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+    
+	<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *" />
+	
+   
+    <title>Bug Crazy App</title>
+    <script>
+        var watchID = null;
+		var context;
+		var posX;
+		var posY;
+		var imageObj;
+		var audio;
+		
+        function onLoad(){
+            document.addEventListener("deviceready", onDeviceReady, false);
+            }
+        function onDeviceReady() {
+			//Set up Canvas
+			var canvas = document.getElementById('myCanvas');
+			context = canvas.getContext("2d");
+			context.canvas.width = window.innerWidth;
+			context.canvas.height = (window.innerHeight-150);
+			
+			//Determine Center
+			posX = window.innerWidth/2 - 25;
+			posY = window.innerHeight/2 - 175;
+			
+			//Draw the bug
+				imageObj = new Image();
+				imageObj.onload = function() {
+				context.drawImage(this, posX, posY);
+			};
+			
+			imageObj.src = "bug.png";
+			
+			//Start audio
+			audio = new Audio('blip.mp3');
+			audio.addEventListener('ended', function() {
+				this.currentTime = 0;
+				this.play();
+			}, false);
+			audio.play();
+			
+            startWatch();
+            }
+        function startWatch() {
+            var options = { frequency: 100 };
+            watchID = navigator.accelerometer.watchAcceleration(onSuccess, onError, options);
+			audio.play();
+            }
+        function stopWatch() {
+            if (watchID) {
+            navigator.accelerometer.clearWatch(watchID);
+            watchID = null;
+			audio.pause();
+			audio.currentPosition = 0;
+            }
+            }
+        function onSuccess(acceleration) {
+			posX = posX + ((-1) * acceleration.x);
+			posY = posY +acceleration.y
+			//clear Canvas
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+			
+			//now we can draw the bug synchronously
+			context.drawImage(imageObj, posX, posY);
+			
+			//output accelerometer info
+			var element = document.getElementById('accelerometer');
+			
+
+            element.innerHTML = 'Acceleration X: ' + acceleration.x + '<br />' +
+            'Acceleration Y: ' + acceleration.y + '<br />' +
+            'Acceleration Z: ' + acceleration.z + '<br />' +
+            'Timestamp: ' + acceleration.timestamp + '<br />';
+            }
+        function onError() {
+            alert('onError!');
+            }
+    </script>
+	<style>
+		html, body {
+			overflow: hidden;
+		}
+	#myCanvas
+		{
+			background-color: #ccc;margin-top: 30px;
+		}
+	#accelerometer
+		{
+			font-size: .6em;
+		}
+	</style>
+</head>
+
+<body onload="onLoad()">
+	<canvas id="myCanvas"></canvas>
+    <div id="accelerometer">Waiting for accelerometer...</div>
+    <button onclick="startWatch();">Start Watching</button>
+    <button onclick="stopWatch();">Stop Watching</button>
+    <script type="text/javascript" src="cordova.js"></script>
+   
+</body>
+
+</html>
